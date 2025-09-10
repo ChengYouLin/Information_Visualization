@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>臺灣出入境人數視覺化</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f0f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 960px;
+            margin: 0 auto;
+        }
+        svg {
+            width: 100%;
+            height: auto;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .axis text {
+            font-size: 12px;
+            fill: #333;
+        }
+        .axis path, .axis line {
+            fill: none;
+            stroke: #ccc;
+            shape-rendering: crispEdges;
+        }
+        .bar {
+            cursor: pointer;
+        }
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            width: 80px;
+            height: auto;
+            padding: 5px;
+            font: 12px sans-serif;
+            background: lightsteelblue;
+            border: 0px;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+        .legend {
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .info-box {
+            width: 100%;
+            max-width: 960px;
+            background-color: #ffffff;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .info-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .info-content {
+            font-size: 16px;
+            line-height: 1.8;
+            color: #555;
+        }
+        .info-content strong {
+            color: #000;
+        }
+        .footer-note {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h2>臺灣出入境人數（2023年5月 - 2024年5月）</h2>
+    <div class="chart-container">
+        <svg viewBox="0 0 960 500"></svg>
+    </div>
+    <div class="info-box">
+        <div class="info-title">資料說明與視覺化分析結果</div>
+        <div class="info-content">
+            <p><strong>功能簡介：</strong><br>
+            - 可從長條圖中直觀看出各月份的出入境比例與變化。<br>
+            - 滑鼠游標指向各月份出境或入境時，會顯示確切人數與比例。<br>
+            - 點擊任意出境或入境的長條圖時，會顯示出境或入境的趨勢線；再次點擊時則會復原。<br>
+            - 利用總額趨勢線與出境或入境的個別趨勢線，可以觀察出相對出境或入境、成長或衰退的比例。</p>
+
+            <p><strong>資料說明：</strong></p>
+            <p><strong>1. 各月份出入境比近為五比五：</strong><br>
+            從各月份的長條圖中我們可以很明顯觀察到，大部分的出境與入境人數為五比五。整體而言，來台長期居留的人數並不高，大多持平為外國人旅遊，與一般國人出入境的紀錄。</p>
+
+            <p><strong>2. 出入境人數季節性波動：</strong><br>
+            從圖中可以發現，入境和出境人數在不同月份存在波動，通常在夏季（暑假）和冬季（過年）會有較高的出入境人數，這反映出可能與假期和旅遊旺季有關；甚至，或許間接推估為國人對外旅遊的需求有所提升。</p>
+
+            <p><strong>3. 穩定成長的趨勢，機場負荷量提升：</strong><br>
+            從總額趨勢線來看，可以觀察出整體出入境的人數正在穩定上升的趨勢，這可能反映出國際旅遊或經濟活動的增長，亦反映出台灣國際機場的負荷量正在提升中。</p>
+
+            <p><strong>資料來源：</strong><br>
+            中華民國內政部 > 統計報告 > 內政統計月報<br>
+            <a href="https://www.moi.gov.tw/cl.aspx?n=4412" target="_blank">https://www.moi.gov.tw/cl.aspx?n=4412</a></p>
+        </div>
+    </div>
+
+    <div class="footer-note">111304019 統計三 林承佑</div>
+
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        const data = [
+            { month: '2023年5月', entry: 1359100, exit: 1402158, total: 2761258 },
+            { month: '2023年6月', entry: 1565104, exit: 1657119, total: 3222223 },
+            { month: '2023年7月', entry: 1762991, exit: 1765775, total: 3528766 },
+            { month: '2023年8月', entry: 1823817, exit: 1772746, total: 3596563 },
+            { month: '2023年9月', entry: 1612127, exit: 1558073, total: 3170200 },
+            { month: '2023年10月', entry: 1823412, exit: 1833779, total: 3657191 },
+            { month: '2023年11月', entry: 1794606, exit: 1764050, total: 3558656 },
+            { month: '2023年12月', entry: 1909664, exit: 1820529, total: 3730193 },
+            { month: '2024年1月', entry: 1785831, exit: 1990541, total: 3776372 },
+            { month: '2024年2月', entry: 2057123, exit: 1971229, total: 4028352 },
+            { month: '2024年3月', entry: 2109471, exit: 2099290, total: 4208761 },
+            { month: '2024年4月', entry: 2001992, exit: 1983453, total: 3985445 },
+            { month: '2024年5月', entry: 1884388, exit: 1933441, total: 3817829 }
+        ];
+
+        const margin = { top: 40, right: 160, bottom: 80, left: 60 };
+        const width = 860 - margin.left - margin.right;
+        const height = 500 - margin.top - margin.bottom;
+
+        const svg = d3.select("svg")
+            .attr("viewBox", `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const x = d3.scaleBand()
+            .domain(data.map(d => d.month))
+            .range([0, width])
+            .padding(0.2);
+
+        const y = d3.scaleLinear()
+            .domain([0, d3.max(data, d => d3.max([d.entry, d.exit, d.total]))])
+            .nice()
+            .range([height, 0]);
+
+        // X軸
+        svg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", `translate(0,${height})`)
+            .call(d3.axisBottom(x))
+            .selectAll("text")
+            .attr("transform", "rotate(-45)")
+            .style("text-anchor", "end");
+
+        // Y軸
+        svg.append("g")
+            .attr("class", "y axis")
+            .call(d3.axisLeft(y).ticks(10).tickFormat(d3.format(".2s")));
+
+        // X軸標題
+        svg.append("text")
+            .attr("class", "axis-title")
+            .attr("x", width)
+            .attr("y", height + 60)
+            .attr("text-anchor", "end")
+            .text("時間");
+
+        // Y軸標題
+        svg.append("text")
+            .attr("class", "axis-title")
+            .attr("x", -40)
+            .attr("y", -10)
+            .attr("text-anchor", "start")
+            .text("人數(M:Million)");
+
+        // 入境條狀
+        svg.selectAll(".entry-bar")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("class", "bar entry-bar")
+            .attr("x", d => x(d.month))
+            .attr("y", height)
+            .attr("width", x.bandwidth() / 2)
+            .attr("height", 0)
+            .attr("fill", "#4CAF50")
+            .transition()
+            .duration(1000)
+            .delay((d, i) => i * 100)
+            .attr("y", d => y(d.entry))
+            .attr("height", d => height - y(d.entry));
+
+        // 出境條狀
+        svg.selectAll(".exit-bar")
+            .data(data)
+            .enter()
+            .append("rect")
+            .attr("class", "bar exit-bar")
+            .attr("x", d => x(d.month) + x.bandwidth() / 2)
+            .attr("y", height)
+            .attr("width", x.bandwidth() / 2)
+            .attr("height", 0)
+            .attr("fill", "#2196F3")
+            .transition()
+            .duration(1000)
+            .delay((d, i) => i * 100 + 500)
+            .attr("y", d => y(d.exit))
+            .attr("height", d => height - y(d.exit));
+
+        // 總額趨勢線
+        const totalLine = d3.line()
+            .x(d => x(d.month) + x.bandwidth() / 2)
+            .y(d => y(d.total));
+
+        const path = svg.append("path")
+            .datum(data)
+            .attr("class", "line total-line")
+            .attr("fill", "none")
+            .attr("stroke", "#FFC107")
+            .attr("stroke-width", 2)
+            .attr("d", totalLine);
+
+        const totalLength = path.node().getTotalLength();
+
+        path
+            .attr("stroke-dasharray", `${totalLength} ${totalLength}`)
+            .attr("stroke-dashoffset", totalLength)
+            .transition()
+            .duration(2000)
+            .attr("stroke-dashoffset", 0);
+
+        const legendData = [
+            { label: "入境人數", color: "#4CAF50" },
+            { label: "出境人數", color: "#2196F3" },
+            { label: "總額趨勢", color: "#FFC107" }
+        ];
+
+        const legend = svg.selectAll(".legend")
+            .data(legendData)
+            .enter()
+            .append("g")
+            .attr("class", "legend")
+            .attr("transform", (d, i) => `translate(${width + 20},${i * 20})`);
+
+        legend.append("rect")
+            .attr("x", 0)
+            .attr("width", 18)
+            .attr("height", 18)
+            .style("fill", d => d.color);
+
+        legend.append("text")
+            .attr("x", 24)
+            .attr("y", 9)
+            .attr("dy", ".35em")
+            .style("text-anchor", "start")
+            .text(d => d.label);
+
+        let clickedEntry = false;
+        let clickedExit = false;
+
+        function updateTrendLine(type) {
+            const trendLine = d3.line()
+                .x(d => x(d.month) + x.bandwidth() / 2)
+                .y(d => y(d[type]));
+
+            svg.selectAll(".trend-line").remove();
+
+            svg.append("path")
+                .datum(data)
+                .attr("class", "line trend-line")
+                .attr("fill", "none")
+                .attr("stroke", type === "entry" ? "#388E3C" : "#1565C0")
+                .attr("stroke-width", 3)
+                .attr("stroke-dasharray", "0,1000")
+                .attr("d", trendLine)
+                .transition()
+                .duration(1000)
+                .attr("stroke-dasharray", "1000,0");
+        }
+
+        function handleBarClick(type) {
+            if (type === "entry") {
+                clickedEntry = !clickedEntry;
+                clickedExit = false;
+                if (clickedEntry) {
+                    svg.selectAll(".entry-bar").transition().style("opacity", 1);
+                    svg.selectAll(".exit-bar").transition().style("opacity", 0.2);
+                    updateTrendLine("entry");
+                } else {
+                    svg.selectAll(".entry-bar").transition().style("opacity", 1);
+                    svg.selectAll(".exit-bar").transition().style("opacity", 1);
+                    svg.selectAll(".trend-line").remove();
+                }
+            } else {
+                clickedExit = !clickedExit;
+                clickedEntry = false;
+                if (clickedExit) {
+                    svg.selectAll(".exit-bar").transition().style("opacity", 1);
+                    svg.selectAll(".entry-bar").transition().style("opacity", 0.2);
+                    updateTrendLine("exit");
+                } else {
+                    svg.selectAll(".exit-bar").transition().style("opacity", 1);
+                    svg.selectAll(".entry-bar").transition().style("opacity", 1);
+                    svg.selectAll(".trend-line").remove();
+                }
+            }
+        }
+
+        svg.selectAll(".entry-bar").on("click", () => handleBarClick("entry"));
+        svg.selectAll(".exit-bar").on("click", () => handleBarClick("exit"));
+
+        legend.on("click", (event, d) => {
+            if (d.label.includes("入境")) {
+                handleBarClick("entry");
+            } else if (d.label.includes("出境")) {
+                handleBarClick("exit");
+            }
+        });
+
+        const tooltip = d3.select("body").append("div")
+            .attr("class", "tooltip")
+            .style("opacity", 0);
+
+        function showTooltip(event, d, type) {
+            const value = type === "entry" ? d.entry : d.exit;
+            const percentage = ((value / d.total) * 100).toFixed(2);
+            tooltip.transition().duration(200).style("opacity", .9);
+            tooltip.html(`數量: ${value}<br>比例: ${percentage}%`)
+                .style("left", (event.pageX + 5) + "px")
+                .style("top", (event.pageY - 28) + "px");
+        }
+
+        function hideTooltip() {
+            tooltip.transition().duration(500).style("opacity", 0);
+        }
+
+        svg.selectAll(".entry-bar").on("mouseover", (event, d) => showTooltip(event, d, "entry"))
+            .on("mouseout", hideTooltip);
+
+        svg.selectAll(".exit-bar").on("mouseover", (event, d) => showTooltip(event, d, "exit"))
+            .on("mouseout", hideTooltip);
+    </script>
+</body>
+</html>

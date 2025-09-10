@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>各職業111年全年薪資所得（萬元）</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+
+        }
+
+        .chart-container {
+            width: 1000px;
+            max-height: 1100px;
+
+            border-radius: 10px;
+
+            padding: 20px 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            margin-bottom: 20px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .bar {
+            fill: steelblue;
+            cursor: pointer;
+            transition: fill 0.2s ease, opacity 0.2s ease;
+        }
+
+        .bar:hover {
+            fill: #1f78b4; /* 深藍色 */
+        }
+
+        .highlight {
+            fill: #ff4d4d !important; /* 紅色 */
+        }
+
+        .dimmed {
+            opacity: 0.3;
+        }
+
+        .axis-label {
+            font-size: 14px;
+            font-weight: bold;
+            fill: #555;
+        }
+
+        .tooltip {
+            position: absolute;
+            text-align: center;
+            background: #fff;
+            border: 1px solid #ccc;
+            padding: 5px;
+            border-radius: 5px;
+            pointer-events: none;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            font-size: 12px;
+        }
+
+        .y-axis-text tspan {
+            display: block;
+        }
+
+        .salary-label {
+            font-size: 12px;
+            font-weight: bold;
+            fill: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <h1>各職業111年全年薪資所得（萬元）</h1>
+        <div class="controls">
+            <label for="topN">顯示前幾名職業：</label>
+            <input type="range" id="topN" min="10" max="30" value="10" step="1">
+            <span id="topN-value">10</span>
+        </div>
+        <svg id="chart"></svg>
+        <div id="tooltip" class="tooltip" style="display: none;"></div>
+    </div>
+
+    <script>
+        const margin = { top: 50, right: 30, bottom: 70, left: 250 };
+        const width = 1000 - margin.left - margin.right;
+        const height = 600 - margin.top - margin.bottom;
+
+        const svg = d3.select("#chart")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+
+        const tooltip = d3.select("#tooltip");
+
+        const topNInput = document.getElementById('topN');
+        const topNValue = document.getElementById('topN-value');
+
+        // 更新顯示的數值
+        topNInput.addEventListener('input', () => {
+            topNValue.textContent = topNInput.value;
+            updateChart(+topNInput.value);
+        });
+
+        let updateChart;
+
+        // 載入資料
+        d3.csv("2.csv").then(rawData => {
+            const data = rawData.map(d => ({
+                職業: d[Object.keys(d)[0]],
+                薪資: +d[Object.keys(d)[1]]
+            }));
+
+            data.sort((a, b) => b.薪資 - a.薪資);
+
+            updateChart = function (topN) {
+                const filteredData = data.slice(0, topN);
+
+                const x = d3.scaleLinear()
+                    .domain([0, d3.max(filteredData, d => d.薪資)])
+                    .range([0, width]);
+
+                const y = d3.scaleBand()
+                    .domain(filteredData.map(d => d.職業))
+                    .range([0, height])
+                    .padding(0.1);
+
+                svg.select(".x-axis")
+                    .transition()
+                    .duration(1000)
+                    .call(d3.axisBottom(x).ticks(5).tickFormat(d => d + " 萬元"))
+                    .attr("transform", `translate(0,${height})`);
+
+                svg.select(".y-axis")
+                    .transition()
+                    .duration(1000)
+                    .call(d3.axisLeft(y))
+                    .selectAll(".tick text")
+                    .call(wrapText, 200);
+
+                const bars = svg.selectAll(".bar")
+                    .data(filteredData, d => d.職業);
+
+                bars.enter()
+                    .append("rect")
+                    .attr("class", "bar")
+                    .attr("x", 0)
+                    .attr("y", d => y(d.職業))
+                    .attr("height", y.bandwidth())
+                    .attr("width", 0)
+                    .on("mouseover", function (event, d) {
+                        tooltip.style("display", "block")
+                            .html(`<strong>${d.職業}</strong><br>薪資：${d.薪資} 萬元`)
+                            .style("left", (event.pageX + 10) + "px")
+                            .style("top", (event.pageY + 10) + "px");
+                        d3.select(this).style("fill", "#1f78b4");
+                    })
+                    .on("mouseout", function () {
+                        tooltip.style("display", "none");
+                        d3.select(this).style("fill", "steelblue");
+                    })
+                    .on("click", function (event, d) {
+                        const isActive = d3.select(this).classed("active");
+                        d3.selectAll(".bar").classed("dimmed", !isActive).classed("active", false);
+                        d3.selectAll(".salary-label").remove();
+
+                        if (!isActive) {
+                            d3.select(this).classed("active", true).classed("dimmed", false);
+                            svg.append("text")
+                                .attr("class", "salary-label")
+                                .attr("x", x(d.薪資) - 5)
+                                .attr("y", y(d.職業) + y.bandwidth() / 2)
+                                .attr("dy", ".35em")
+                                .attr("text-anchor", "end")
+                                .text(d.薪資 + " 萬元");
+                        }
+                    })
+                    .transition()
+                    .duration(1000)
+                    .attr("width", d => x(d.薪資));
+
+                bars.transition()
+                    .duration(1000)
+                    .attr("y", d => y(d.職業))
+                    .attr("width", d => x(d.薪資))
+                    .attr("height", y.bandwidth());
+
+                bars.exit()
+                    .transition()
+                    .duration(1000)
+                    .attr("width", 0)
+                    .remove();
+
+                svg.selectAll(".bar")
+                    .classed("highlight", (d, i) => i < 3)
+                    .style("fill", (d, i) => (i < 3 ? "#ff4d4d" : "steelblue"));
+            };
+
+            svg.append("g")
+                .attr("class", "x-axis")
+                .attr("transform", `translate(0,${height})`);
+
+            svg.append("g")
+                .attr("class", "y-axis");
+
+            svg.append("text")
+                .attr("class", "axis-label")
+                .attr("x", -margin.left + 10)
+                .attr("y", -20)
+                .attr("text-anchor", "start")
+                .text("職業名稱");
+
+            svg.append("text")
+                .attr("class", "axis-label")
+                .attr("x", width / 2)
+                .attr("y", height + 50)
+                .attr("text-anchor", "middle")
+                .text("薪資（萬元）");
+
+            updateChart(+topNInput.value);
+        }).catch(error => {
+            console.error("Error loading the CSV file:", error);
+        });
+
+        function wrapText(text, width) {
+            text.each(function () {
+                const textEl = d3.select(this);
+                const words = textEl.text().split(/(?=\S)/g);
+                const lineHeight = 1.1;
+                const x = textEl.attr("x");
+                const y = textEl.attr("y");
+                let tspan = textEl.text(null).append("tspan").attr("x", x).attr("y", y);
+                let line = [];
+                let lineNumber = 0;
+
+                words.forEach(function (word) {
+                    line.push(word);
+                    tspan.text(line.join(""));
+                    if (tspan.node().getComputedTextLength() > width) {
+                        line.pop();
+                        tspan.text(line.join(""));
+                        line = [word];
+                        tspan = textEl.append("tspan")
+                            .attr("x", x)
+                            .attr("y", y)
+                            .attr("dy", `${++lineNumber * lineHeight}em`)
+                            .text(word);
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HW3-112年台灣薪資排名調查</title>
+  <style>
+    /* 全局樣式 */
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f9f9f9;
+      color: #333;
+      line-height: 1.8;
+    }
+
+    h1, h2 {
+      margin: 0;
+    }
+
+    a {
+      text-decoration: none;
+      color: inherit;
+    }
+
+    /* 大標樣式 */
+    .header {
+      background-color: #2c3e50;
+      color: #ecf0f1;
+      text-align: center;
+      padding: 30px 20px;
+      font-size: 2em;
+      font-weight: bold;
+      letter-spacing: 2px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    /* 按鈕導航樣式 */
+    .nav-bar {
+      display: flex;
+      justify-content: center;
+      background-color: #34495e;
+      padding: 15px 0;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-bar button {
+      background-color: #95a5a6;
+      color: #fff;
+      border: none;
+      padding: 10px 25px;
+      margin: 0 10px;
+      font-size: 1em;
+      font-weight: bold;
+      border-radius: 25px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .nav-bar button:hover {
+      background-color: #7f8c8d;
+      transform: translateY(-3px);
+    }
+
+    /* 區塊樣式 */
+    .section {
+      margin: 40px auto;
+      max-width: 1200px;
+      background-color: #fff;
+      border-radius: 15px;
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
+
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-title {
+      background-color: #34495e;
+      color: #fff;
+      padding: 20px;
+      font-size: 1.8em;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .section-content {
+      display: flex;
+      flex-wrap: wrap;
+      padding: 30px;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .section-content .left, .section-content .right {
+      flex: 1 1 calc(50% - 20px);
+      min-width: 300px;
+    }
+
+    .section-content .left img {
+      max-width: 100%;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+    }
+
+    .section-content .left img:hover {
+      transform: scale(1.05);
+    }
+
+    .section-content .right {
+      padding: 10px;
+    }
+
+    .section-content .right p {
+      margin: 0 0 15px;
+      font-size: 1.1em;
+      color: #555;
+      line-height: 1.8;
+    }
+
+    /* 內嵌 iframe 區塊 */
+    .iframe-container {
+      margin-top: 20px;
+      border-radius: 15px;
+      overflow: hidden;
+      position: relative;
+      background: #ecf0f1;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      animation: fadeIn 1s ease forwards;
+      opacity: 0;
+    }
+
+    .iframe-container iframe {
+      width: 100%;
+      height: 1100px;
+      border: none;
+    }
+
+    /* 動畫 */
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .footer-note {
+      position: fixed;
+      bottom: 10px;
+      right: 10px;
+      font-size: 12px;
+      color: #888;
+    }
+    .information {
+        margin: 20px 0;
+        font-size: 16px;
+        text-align: center;
+    }
+
+    .information p {
+        margin-bottom: 10px;
+    }
+
+    .information a {
+        color: #1f77b4;
+        text-decoration: none;
+    }
+
+    .information a:hover {
+        text-decoration: underline;
+    }
+
+    </style>
+</head>
+<body>
+
+  <div class="footer-note">111304019 統計三 林承佑</div>
+
+  <!-- 大標 -->
+  <div class="header">112年台灣薪資排名調查－經常性薪資、111年所得、受僱人數</div>
+
+  <!-- 按鈕導航 -->
+  <div class="nav-bar">
+    <button onclick="scrollToSection(1)">第1部分</button>
+    <button onclick="scrollToSection(2)">第2部分</button>
+    <button onclick="scrollToSection(3)">第3部分</button>
+    <button onclick="scrollToSection(4)">第4部分</button>
+  </div>
+
+      <div class="information">
+        <p>
+            <strong>參考新聞：</strong> 
+            <a href="https://www.bnext.com.tw/article/81056/monthly--annual-salary-rank" target="_blank">
+                台灣薪資排名調查！「這職業」年薪破300萬，全台僅42人，還有哪些行業也高薪？
+            </a>
+        </p>
+        <p>
+            <strong>參考數據：</strong> 
+            <a href="https://pswst.mol.gov.tw/psdn/Query/wFrmQuery01.aspx" target="_blank">
+                勞動部職類別薪資調查動態查詢
+            </a>
+        </p>
+        <p>
+            <strong>政府統計呈現結果（勞動部新聞稿）：</strong> 
+            <a href="https://www.mol.gov.tw/1607/1632/1633/68881/" target="_blank">
+                112年7月職類別薪資調查統計結果
+            </a>
+        </p>
+    </div>
+
+  <!-- 第1部分 -->
+  <div class="section" id="section-1">
+    <div class="section-title">第1部分： 各職業經常性薪資（月薪）排名</div>
+    <div class="section-content">
+      <div class="left">
+        <img src="pic1.png" alt="圖片示例">
+      </div>
+      <div class="right">
+      <h3>呈現目標：</h3>
+      <p>　　文章內的文字希望呈現，詳細職業的月薪排名。</p>
+
+      <h3>原本問題：</h3>
+      <p>　　以文字且同時敘述多筆資料的內容，夾雜許多月薪、人數等數值資料，閱讀起來不夠清楚明瞭。</p>
+
+      <h3>改良選擇與分析：</h3>
+      <ul>
+        <li>由於是做數值上的比較，便以最直觀的長條圖作為優先考量。</li>
+        <li>用水平的方式依照排名由上而下呈現，可以明顯凸出排名的重點！</li>
+        <li>前三名以不同顏色作為區隔，讓閱讀新聞的人可以快速得到新聞的重點答案。</li>
+        <li>簡化並減少不必要的資訊，亦可以藉由鼠標的觸碰查看確切的內容。</li>
+        <li>增加互動工具，讓使用者可以調整呈現的數量，藉此觀看更多其他職業的薪水狀況，提升圖表的實用度。</li>
+      </ul>
+    </div>
+    </div>
+    <div class="iframe-container">
+      <iframe src="part1.html"></iframe>
+    </div>
+  </div>
+
+  <!-- 第2部分 -->
+  <div class="section" id="section-2">
+    <div class="section-title">第2部分： 各職業111年全年薪資所得排名</div>
+    <div class="section-content">
+      <div class="left">
+        <img src="pic2.png" alt="圖片示例">
+      </div>
+    <div class="right">
+      <h3>呈現目標：</h3>
+      <p>　　文章內的文字希望呈現，詳細職業的年所得排名。</p>
+
+      <h3>原本問題：</h3>
+      <p>　　以文字且同時敘述多筆資料的內容，夾雜許多月薪、年薪等數值資料，閱讀起來不夠清楚明瞭。</p>
+
+      <h3>改良選擇與分析：</h3>
+      <ul>
+        <li>由於是做數值上的比較，便以最直觀的長條圖作為優先考量。</li>
+        <li>用水平的方式依照排名由上而下呈現，可以明顯凸出排名的重點！</li>
+        <li>前三名以不同顏色作為區隔，讓閱讀新聞的人可以快速得到新聞的重點答案。</li>
+        <li>簡化並減少不必要的資訊，亦可以藉由鼠標的觸碰查看確切的內容。</li>
+        <li>增加互動工具，讓使用者可以調整呈現的數量，藉此觀看更多其他職業的薪水狀況，提升圖表的實用度。</li>
+      </ul>
+
+      <h3>發現問題：</h3>
+        <p>　　雖然新聞中有解釋為什麼職業類別會有高低落差的分佈，但若要在這張圖中加入更多的資訊，將會掩蓋其呈現目標。</p>
+        <p>　　我選擇在下張圖表當中，做出更多的篩選和比較的功能，讓每張圖能夠盡可能地呈現他的主要目標。</p>
+    </div>
+    </div>
+    <div class="iframe-container">
+      <iframe src="part2.html"></iframe>
+    </div>
+  </div>
+
+  <!-- 第3部分 -->
+  <div class="section" id="section-3">
+    <div class="section-title">第3部分： 各職業與各行業的月薪與年薪排名</div>
+    <div class="section-content">
+      <div class="left">
+        <img src="pic3.png" alt="圖片例">
+      </div>
+    <div class="right">
+      <h3>呈現目標：</h3>
+      <p>　　希望呈現各大職業類別的月薪和年薪狀況與排名。</p>
+
+      <h3>原本問題：</h3>
+      <p>　　直接將所有行業的職業類別混再一起做討論，且以文字的方式同時敘述月薪和年薪兩項數值，較難一眼做出比較或了解排名的效果。</p>
+
+      <h3>改良選擇與分析：</h3>
+      <ul>
+        <li>由於是做數值上的比較，便以最直觀的長條圖作為優先考量。
+          <ul>
+            <li>因為月薪和年薪的單位差距較大，無法以組合長條圖的方式呈現。</li>
+            <li>若以雙Ｙ軸（或Ｘ軸）的方式呈現，會使得月薪的結果難以辨別。</li>
+          </ul>
+        </li>
+        <li>用水平的方式依照排名由上而下呈現，可以明顯凸出排名的重點；並且方便放在左右進行比較！</li>
+        <li>沒有使用Ｙ軸放在中間，類似小提琴圖的方式呈現，是因為年薪和月薪的排名可能會有所差異。</li>
+        <li>增加兩組篩選功能：
+          <ul>
+            <li>行業：
+              <ul>
+                <li>如果選擇全部，畫面中只會呈現工業和服務業。</li>
+                <li>讓使用者可以看見月薪和年薪的前十名職業分別的數量。</li>
+                <li>若選擇工業或服務業，則可以看見分別的職業細項。</li>
+              </ul>
+            </li>
+            <li>職業：
+              <ul>
+                <li>可以依照職業類別，查看該類別的細項排名。</li>
+                <li>藉此解釋前一部分無法解釋的，鑑於職業類別導致薪資高低落差的情況。</li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+        <li>從某一行業類別當中，可以看見職業細項會呈現不同顏色
+          <ul>
+            <li>希望藉此達到左右比較的效果，可以看見月薪和年薪會有排名不同的情況。</li>
+            <li>當點擊左或右某一細項時，會將左右兩側相同的細項凸顯出來，藉此容易觀察！</li>
+          </ul>
+        </li>
+        <li>簡化並減少不必要的資訊，亦可以藉由鼠標的觸碰或點擊查看詳細的資訊。</li>
+      </ul>
+
+      <h3>發現問題：</h3>
+      <p>　　對於政府對職業的分類較為複雜與重疊，有些模糊和重疊，導致結果上仍會有明顯高低落差的結果，且有如下所述的面向仍無法透果本圖表解釋：</p>
+      <p>　　像是服務業當中的金融業，在各個職業類別都會存在，而金融業又屬服務業中的前幾名，導致即使切換職業類別，也無法比出金融業的狀況。</p>
+    </div>
+    </div>
+    <div class="iframe-container">
+      <iframe src="part3.html"></iframe>
+    </div>
+  </div>
+
+  <!-- 第4部分 -->
+  <div class="section" id="section-4">
+    <div class="section-title">第4部分： 各職業月薪與年薪前十名與受僱人數關係</div>
+    <div class="section-content">
+      <div class="left">
+        <img src="pic4.png" alt="圖片示例">
+      </div>
+    <div class="right">
+      <h3>呈現目標：</h3>
+      <p>　　希望呈現詳細職業的薪資排名與人數的關係。</p>
+
+      <h3>原本問題：</h3>
+      <p>　　無法明顯看出薪水和人數的關係，且多比數據放在一起後，無法更清楚的得知前十名彼此間的差異狀況。</p>
+
+      <h3>改良選擇與分析：</h3>
+      <ul>
+        <li>已知只會呈現前十名的職業薪水狀況，因此使用 Treemap 的方式，在區塊內依照薪水多寡劃分。</li>
+        <li>在藉由顏色的深淺，僅將前三名的顏色由深至淺，其餘則以最淺的顏色呈現。用以凸顯結果。</li>
+        <li>為了呈現人數的明顯差異，我前十名的受僱人數作為總額，再以 1000:1 的算法進行計算。
+          <ul>
+            <li>以「一千人當中會有幾個人在此職業工作」的想法，呈現於各個職業的範圍當中。</li>
+            <li>使用直觀的可愛小人圖片，放入 Treemap 中觀察。</li>
+            <li>藉此可以明顯看到前十名的職業，受僱人數的分佈。</li>
+            <li>也可觀察出，前三名的職業受僱人數的差距。</li>
+          </ul>
+        </li>
+        <li>為簡化並減少不必要的資訊，亦可以藉由鼠標的觸碰或點擊查看詳細的資訊。（互動效果）</li>
+      </ul>
+
+      <h3>發現問題：</h3>
+      <p>　　因為像精算師的受僱人數只有十位數，而某些職業卻有十萬人的受僱人數，因此既使壓制一千人（原本嘗試壓到一百人）仍無法呈現真實的樣貌，只能夠成功呈現彼此間的差異。意即有鑑於受僱人數較多的薪資排名又非在前十名當中的情況，造成可愛的小人圖片並無法順利全部呈現的結果。</p>
+      <p>　　導致這份圖表的結果並不會像使用長條圖般的精準；而我亦有使用雙Ｙ軸的方式想嘗試呈現兩種數據資料，然而薪資和人數都為類別型資料，無法以長條圖和折線圖的結合呈現；而若使用堆疊長條圖，仍會有受僱人數過低而無法辨識的問題。</p>
+    </div>
+
+    </div>
+    <div class="iframe-container">
+      <iframe src="part4.html"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // 滾動至對應區塊
+    function scrollToSection(number) {
+      const section = document.getElementById(`section-${number}`);
+      const offset = -70; // 根據導航欄高度調整偏移量，這裡假設是 70px
+      const sectionPosition = section.getBoundingClientRect().top + window.scrollY + offset;
+
+      window.scrollTo({
+        top: sectionPosition,
+        behavior: 'smooth'
+      });
+    }
+
+    // 動畫效果：當區塊進入視窗時顯示
+    const sections = document.querySelectorAll('.section');
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.2 }
+    );
+
+    sections.forEach(section => observer.observe(section));
+  </script>
+
+</body>
+</html>

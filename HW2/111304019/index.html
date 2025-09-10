@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>升學和大學成績 與 薪水 的關係圖</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            text-align: center;
+            color: #444;
+            margin-top: 20px;
+        }
+
+        .filter-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            background-color: #f9f9f9;
+            padding: 15px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-group {
+            margin: 10px;
+            padding: 10px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .filter-group label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .filter-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+
+        .axis path,
+        .axis line {
+            fill: none;
+            stroke: #000;
+            shape-rendering: crispEdges;
+        }
+
+        .axis text {
+            font-size: 12px;
+        }
+
+        .legend {
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .highlight {
+            stroke: #000;
+            stroke-width: 2px;
+        }
+
+        .fade {
+            opacity: 0.1;
+        }
+
+        .axis-label {
+            font-size: 12px;
+            text-anchor: middle;
+            fill: black;
+        }
+
+        .description {
+            margin: 40px auto;
+            max-width: 800px;
+            padding: 20px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            line-height: 1.5;
+        }
+
+        .description p, .description ul {
+            margin-bottom: 10px;
+        }
+
+        .description hr {
+            border: none;
+            border-top: 1px solid #ccc;
+            margin: 20px 0;
+        }
+        .footer-note {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 12px;
+            color: #888;
+        }
+        li {
+            margin-bottom: 15px; /* 調整間距的大小 */
+        }
+    </style>
+</head>
+<body>
+    <h1>升學和大學成績 與 薪水 的關係圖</h1>
+    <div class="filter-section">
+        <div class="filter-group">
+            <span class="filter-label">Ｙ軸變數內容（AMCAT考科）：</span>
+            <label><input type="checkbox" class="checkbox" value="English" checked> English</label>
+            <label><input type="checkbox" class="checkbox" value="Logical" checked> Logical</label>
+            <label><input type="checkbox" class="checkbox" value="ComputerProgramming" checked> Computer Programming</label>
+            <label><input type="checkbox" class="checkbox" value="Quant" checked> Quant</label>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">資料分類篩選器：</span>
+            <label><input type="radio" name="colorGroup" value="Specialization" checked> By Specialization</label>
+            <label><input type="radio" name="colorGroup" value="CollegeState"> By College Name</label>
+            <label><input type="radio" name="colorGroup" value="Gender"> By Gender</label>
+            <label><input type="radio" name="colorGroup" value="GraduationYear"> By Graduation Year</label>
+        </div>
+        <div class="filter-group">
+            <span class="filter-label">數據呈現方式：</span>
+            <label><input type="radio" name="displayType" value="sample" checked> Sample Data</label>
+            <label><input type="radio" name="displayType" value="average"> Average Data</label>
+        </div>
+    </div>
+
+    <div id="visualization"></div>
+
+        <div class="description">
+        <h2>資料與視覺化說明：</h2>
+        <p>工程是一門廣泛的學科，當中還被分為幾個子學科，通常具有四個主要分支：化學工程、土木工程、電氣工程和機械工程。</p>
+        <p>而這份資料集是來自「印度的工程畢業生」，雖然每年約有290萬學生入學。 平均每年有150萬學生獲得工程學位，但由於缺乏從事技術工作所需的技能，不到20%的學生在其核心領域就業。</p>
+        <p>因此，希望透過這份數據與視覺化得呈現，來了解工程相關學系的學生，畢業後在職場上取得的薪水，與當初升學與在大學期間所取得的成績關係，並且加入印度AMCAT專業科目的測驗成績，來觀察其中相對應的關係圖。</p>
+        
+        <hr>
+        
+        <h3>選擇「平行座標圖Parallel coordinates」的原因：</h3>
+        <ul>
+            <li><strong>多維數據的可視化（Multivariate Data Visualization）：</strong><br>　－ 讓使用者同時觀察這些維度，進行比較和關係分析。</li>
+            <li><strong>支持多維關係觀察（Observing Multivariate Relationships）：</strong><br>　－ 快速檢視變量之間的潛在關聯性，通過對線條的趨勢比較，可找到這些變數之間的模式或關聯性。</li>
+            <li><strong>適合處理類別和連續型數據（Handling Both Categorical and Continuous Data）：</strong><br>　－ 將類別型數據（如專業或學校）與連續型數據（如成績和薪水）合併呈現，支持多種類型數據的統一展示，有助於對比不同類別的群體特徵。</li>
+        </ul>
+        <p><u><i>以達到觀察目標：「現在薪水狀態與過去入學成績、大學GPA、和AMCAT成績關係」</i></u></p>
+        
+        <hr>
+
+        <h3>圖表解釋：</h3>
+        <ul>
+            <li><strong>抽樣資料與平均資料呈現差別：</strong><br>　　－ 為了避免平均資料造成數據呈現的偏頗結果，所以保留抽樣資料的選項，希望使用者可以參考其中十筆資料，觀察相對應的關係<br>　　－ 為表示數據的變化受個體因素（資料（受測者））影響，故保留抽樣的結果與平均的結果，來做更嚴謹的統計解釋。</li>
+
+            <li><strong>觀測方法：</strong><br>　　－ 我們可以透過相對應的位置來觀測這個類別的某群資料的表現（透過滑鼠碰向特定種類的資料）<br>　　－ 從薪水或入學成績向左與向右追朔（或關閉AMCAT的考科），來觀察其中的數據他們相對應的變化<br>　　－ 可能會呈現現在薪水在前面的資料，入學時的分數卻是最低的，大學成績位於中間。<br>　　－ 可透過抽樣的結果與平均的結果，做比較和觀察，來對結果做更嚴謹的統計解釋。<br>　　－ 透過篩選器的功能，可以觀察這些資料與AMCAT考科的關係，也可以查看同樣的資料，如果是以大學學校、畢業年份或性別等類別，會不會有不同的解釋與結果。</li>
+
+            <li><strong>舉例：</strong><br>　　－ 以預設的Ｙ軸、Specialization（大學科系）分類、抽樣資料呈現為例。<br>　　－ 當我們滑鼠指向information technology的資料時，我們可以觀察：<br>　　　　　－ 這個科系在入學時的測驗落在50~90分，大學的GPA相當集中<br>　　　　　－ AMCAT考試科目，除了英文相對集中其他都較為發散<br>　　　　　－ 從薪水的最高幾條沿著對應的成績往左追朔，可以發現：<br>　　　　　　　－ 他們的表現在AMCAT的成績有高有低<br>　　　　　　　－ 他們大學成績有兩位維持相對高的分數（在這十筆中）<br>　　　　　　　－ 但他們入學的成績卻落在這十筆的平均中偏上而已。</li>
+
+        </ul>
+
+        <hr>
+
+        <h3>設計（功能）說明：</h3>
+        <ul>
+            <li><strong>選擇多個Ｙ軸的變數內容：</strong><br>　－ 畫面中會固定保留「高中升大學測驗」、「collegeGPA」、「Salary」。<br>　－ 使用者可以自行選擇要多觀察的類別，加入新的Ｙ軸觀察數據與其的相對應關係。</li>
+            <li><strong>對資料進行不同的分類：</strong><br>　－ 將資料進行不同種類分類，將會呈現不同對應的顏色呈現，每種類別將帶來不同的數據與視覺變化。<br>　－ 當滑鼠觸碰圖例或圖表中的數據線時，只保留該組特定數據並淡化其他的數據類別，使其更易觀察。</li>
+            <li><strong>調整數據的呈現方式與意涵：</strong><br>　－ 提供兩種選擇來改變過多數據雜亂呈現的問題。<br>　－ 可以選擇<b>Sample data</b>，將根據你選擇的分類方式，並對其每個不同種的數據內容，分別做「10筆隨機抽樣」呈現。<br>　－ 可以選擇<b>Average data</b>，將根據你選擇的分類方式，並對其每個不同種的數據內容，分別做「計算平均」的動作，並只呈現其平均值。</li>
+        </ul>
+        
+        <hr>
+        
+        <h3>設計選擇：</h3>
+        <ul>
+            <li><strong>資料編碼（Data Encoding）：</strong><br>　－ 將「入學成績」、「大學 GPA」、「薪水」這三固定變量設定為 Y 軸。<br>　－ 以固定軸成為觀察基準，可以直觀地比較不同數據之間的關係。<br>　－ AMCAT 考科也可以依需求動態新增到 Y 軸，讓資料關係更清晰，避免視覺雜亂。</li>
+            <li><strong>視覺管道的結構（Visual Structure Choices）：</strong><br>　－ 固定了入學成績、GPA 和薪水為 Y 軸，並設計其他考科變量（如英語、邏輯等）為可選項目。<br>　－ 用者可自訂顯示的軸數量和順序，提供靈活性，支持使用者針對不同需求動態切換分析重點。</li>
+            <li><strong>視覺標度（Visual Scales）：</strong><br>　－ 使用定性標度（Categorical Scale）將不同類別（如「大學科系」、「大學名稱」）用不同顏色呈現，能夠清晰地區分和識別每個分類類別。<br>　－ 用來表達無特定順序的類別型資料，幫助使用者快速辨別和比較不同分類的數據。</li>
+            <li><strong>介面互動（Interaction Choices）：</strong><br>　－ 點選後淡化其他數據、選擇不同 Y 軸、篩選與動態重新呈現等。<br>　－ 使用者能夠靈活探索數據，並且每次更動篩選後圖形的動態更新效果，提升簡易互動體驗。</li>
+        </ul>
+        
+        <hr>
+        
+        <h3>相關的經驗法則：</h3>
+        <ul>
+            <li><strong>資料簡化與聚合（Simplification and Aggregation）：</strong><br>　－ 由於數據量大（3~4千筆），提供隨機抽樣十筆或取平均的功能，<br>　－ 有效減少視覺負擔，讓使用者在查看全體趨勢與個別數據時不會被資訊淹沒。</li>
+            <li><strong>一致性（Consistency）：</strong><br>　－ 在不同篩選條件下，數據會重新從左至右動態呈現。<br>　－ 相同的成績標準（滿分分數相同時）以相同的刻度大小進行呈現比較。<br>　－ 放大部分數據的刻度範圍（薪水），而非以資料的最大最小值作為範圍標準，使其差異呈現更明顯。</li>
+            <li><strong>重點突出（Emphasis）：</strong><br>　－ 當滑鼠點擊某條數據線或圖例時，會淡化其他數據，將該筆數據突顯出來，有效減少視覺雜訊。</li>
+            <li><strong>易於探索的靈活性（Exploratory Flexibility）：</strong><br>　－ 允許使用者自由選擇不同的 AMCAT 考科來添加到 Y 軸，並提供「專業科系」和「大學名稱」等分類篩選，使得探索過程靈活性高。<br>　－ 支持使用者基於各自的需求，從不同視角檢視數據。</li>
+        </ul>
+
+        <hr>
+
+
+        <h3>資料來源：</h3>
+        <p>Kaggle - <a href="https://www.kaggle.com/datasets/manishkc06/engineering-graduate-salary-prediction">Engineering Graduate Salary Prediction</a></p>
+
+    </div>
+
+    <script>
+        d3.csv("data.csv").then(function(data) {
+            createParallelCoordinates(data);
+        });
+
+        function createParallelCoordinates(data) {
+            const margin = {top: 50, right: 50, bottom: 150, left: 50};
+            const width = 1200 - margin.left - margin.right;
+            const height = 500 - margin.top - margin.bottom;
+
+            const svg = d3.select("#visualization").append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .style("display", "block")
+                .style("margin", "0 auto")
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            const dimensions = ["percentage", "collegeGPA", "English", "Logical", "ComputerProgramming", "Quant", "Salary"];
+            const y = {};
+
+            const amcatScale = d3.scaleLinear().domain([0, 1000]).range([height, 0]);
+
+            dimensions.forEach(d => {
+                if (d === "Salary") {
+                    y[d] = d3.scaleLog()
+                        .domain([10000, 1300000])
+                        .range([height, 0]);
+                } else if (["English", "Logical", "ComputerProgramming", "Quant"].includes(d)) {
+                    y[d] = amcatScale;
+                } else {
+                    y[d] = d3.scaleLinear()
+                        .domain([0, 100])
+                        .range([height, 0]);
+                }
+            });
+
+            const x = d3.scalePoint()
+                .domain(dimensions)
+                .range([0, width]);
+
+            const line = d3.line()
+                .defined(d => !isNaN(d[1]));
+
+            const foreground = svg.append("g")
+                .attr("class", "foreground");
+
+            const colorScale = d3.scaleOrdinal(d3.schemeTableau10);
+
+            function drawLines(selectedDimensions, colorBy, displayType) {
+                foreground.selectAll("path").remove();
+
+                let displayData = data;
+
+                if (displayType === "sample") {
+                    const groupedData = d3.group(data, d => d[colorBy]);
+                    displayData = Array.from(groupedData, ([key, values]) => {
+                        return values.slice(0, 10);
+                    }).flat();
+                } else if (displayType === "average") {
+                    const groupedData = d3.group(data, d => d[colorBy]);
+                    displayData = Array.from(groupedData, ([key, values]) => {
+                        const avg = {};
+                        dimensions.forEach(dim => {
+                            avg[dim] = d3.mean(values, v => +v[dim]);
+                        });
+                        avg[colorBy] = key;
+                        return avg;
+                    });
+                }
+
+                const paths = foreground.selectAll("path")
+                    .data(displayData)
+                    .enter().append("path")
+                    .attr("d", d => line(selectedDimensions.map(p => [x(p), y[p](d[p])])))
+                    .style("fill", "none")
+                    .style("stroke", d => colorScale(d[colorBy]))
+                    .style("opacity", 0.5);
+
+                paths.transition().duration(1500)
+                    .attrTween("stroke-dasharray", function() {
+                        const len = this.getTotalLength();
+                        return d3.interpolateString(`0,${len}`, `${len},${len}`);
+                    });
+
+                paths.on("mouseover", function(event, d) {
+                        foreground.selectAll("path")
+                            .style("opacity", 0.1);
+                        foreground.selectAll("path")
+                            .filter(p => p[colorBy] === d[colorBy])
+                            .style("opacity", 1)
+                            .classed("highlight", true);
+
+                        svg.selectAll(".legend").style("opacity", 0.1);
+                        svg.selectAll(".legend")
+                            .filter(l => l === d[colorBy])
+                            .style("opacity", 1);
+                    })
+                    .on("mouseout", function() {
+                        foreground.selectAll("path")
+                            .style("opacity", 0.5)
+                            .classed("highlight", false);
+
+                        svg.selectAll(".legend").style("opacity", 1);
+                    });
+            }
+
+            function drawAxes(selectedDimensions) {
+                svg.selectAll(".dimension").remove();
+
+                const dimensionGroups = svg.selectAll(".dimension")
+                    .data(selectedDimensions)
+                    .enter().append("g")
+                    .attr("class", "dimension")
+                    .attr("transform", d => `translate(${x(d)})`)
+                    .each(function(d) {
+                        d3.select(this).call(d3.axisLeft(y[d]).ticks(5));
+                    });
+
+                dimensionGroups.append("text")
+                    .attr("class", "axis-label")
+                    .attr("y", height + 15)
+                    .attr("x", 0)
+                    .text((d, i) => i === 0 ? "高中升大學測驗" : d);
+            }
+
+            function updateAxes() {
+                const selectedDimensions = ["percentage", "collegeGPA", "Salary"];
+                d3.selectAll(".checkbox").each(function() {
+                    if (d3.select(this).property("checked")) {
+                        selectedDimensions.splice(2, 0, d3.select(this).property("value"));
+                    }
+                });
+
+                x.domain(selectedDimensions);
+
+                const colorBy = d3.select('input[name="colorGroup"]:checked').node().value;
+                const displayType = d3.select('input[name="displayType"]:checked').node().value;
+
+                drawAxes(selectedDimensions);
+                drawLines(selectedDimensions, colorBy, displayType);
+                updateLegend(colorBy, displayType);
+            }
+
+            function updateLegend(colorBy, displayType) {
+                svg.selectAll(".legend").remove();
+
+                const legendData = Array.from(new Set(data.map(d => d[colorBy])));
+
+                const legend = svg.selectAll(".legend")
+                    .data(legendData);
+
+                const legendEnter = legend.enter().append("g")
+                    .attr("class", "legend")
+                    .attr("transform", (d, i) => `translate(${(i % 4) * (width / 4)}, ${height + 70 + Math.floor(i / 4) * 20})`)
+                    .on("mouseover", function(event, d) {
+                        foreground.selectAll("path")
+                            .style("opacity", 0.1);
+                        foreground.selectAll("path")
+                            .filter(p => p[colorBy] === d)
+                            .style("opacity", 1)
+                            .classed("highlight", true);
+
+                        svg.selectAll(".legend").style("opacity", 0.1);
+                        d3.select(this).style("opacity", 1);
+                    })
+                    .on("mouseout", function() {
+                        foreground.selectAll("path")
+                            .style("opacity", 0.5)
+                            .classed("highlight", false);
+
+                        svg.selectAll(".legend").style("opacity", 1);
+                    });
+
+                legendEnter.append("rect")
+                    .attr("x", 0)
+                    .attr("width", 18)
+                    .attr("height", 18)
+                    .style("fill", d => colorScale(d));
+
+                legendEnter.append("text")
+                    .attr("x", 24)
+                    .attr("y", 9)
+                    .attr("dy", ".35em")
+                    .text(d => d);
+
+                legendEnter.merge(legend);
+            }
+
+            updateAxes();
+
+            d3.selectAll(".checkbox").on("change", updateAxes);
+            d3.selectAll('input[name="colorGroup"]').on("change", updateAxes);
+            d3.selectAll('input[name="displayType"]').on("change", updateAxes);
+        }
+    </script>
+
+    <div class="footer-note">111304019 統計三 林承佑</div>
+</body>
+</html>
