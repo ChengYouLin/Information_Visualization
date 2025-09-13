@@ -11,7 +11,7 @@
 [![My Skills](https://skillicons.dev/icons?i=d3,js,html,css,vscode)](https://skillicons.dev)
 
 所有作業Demo連結：
-|--|-作品名稱-|-連結-|
+||作品名稱|連結|
 |--|--|--|
 |作業1|臺灣出入境人數(組合長條圖)|[Demo 連結](http://140.119.162.201:3000/homework/hw1-24/111304019/)|
 |作業2|升學和大學成績與薪水的關係圖(平行座標圖)|[Demo 連結](http://140.119.162.201:3000/homework/hw2-24/111304019/)|
